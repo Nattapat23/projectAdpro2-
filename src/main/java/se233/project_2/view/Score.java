@@ -5,7 +5,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
 public class Score extends Label {
-    private int score = 0;
+    private int score = 100;
 
     public Score(int x, int y) {
         setTranslateX(x);
@@ -13,6 +13,7 @@ public class Score extends Label {
         setTextFill(Color.WHITE);
         setFont(new Font("Arial", 24));
         update(0);
+        System.out.println("ควย");
     }
 
     public void update(int score) {
