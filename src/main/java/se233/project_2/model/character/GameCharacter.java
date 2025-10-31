@@ -7,8 +7,6 @@ import se233.project_2.Launcher;
 import se233.project_2.model.AnimatedSprite;
 import se233.project_2.view.GameStage;
 
-import java.util.concurrent.TimeUnit;
-
 
 public class GameCharacter extends Pane {
     private Image characterImg;
@@ -57,7 +55,7 @@ public class GameCharacter extends Pane {
     private static final int ANIM_SHOOT_JUMP = 7;
     private static final int ANIM_SHOOT_CROUCH = 8;
 
-    public GameCharacter(int id, int x, int y, String imgName, int count, int column, int row, int width, int height, KeyCode leftKey, KeyCode rightKey, KeyCode upKey,KeyCode proneKey, KeyCode shootKey) {
+    public GameCharacter(int id, int x, int y, int width, int height, KeyCode leftKey, KeyCode rightKey, KeyCode upKey,KeyCode proneKey, KeyCode shootKey) {
         this.x = x;
         this.y = y;
         this.startX = x;
@@ -71,8 +69,8 @@ public class GameCharacter extends Pane {
 
         this.lives = 3;
 
-        this.characterImg = new Image(Launcher.class.getResourceAsStream(imgName));
-        this.imageView = new AnimatedSprite(characterImg, count, column, row, 0, 0, width, height);
+        this.characterImg = new Image(Launcher.class.getResourceAsStream("/se233/project_2/player.png"));
+        this.imageView = new AnimatedSprite(characterImg,4,4,1, 0,0, 16,32);
         this.imageView.setFitWidth((int) (width * 1.2));
         this.imageView.setFitHeight((int) (height * 1.2));
 
