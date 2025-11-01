@@ -15,50 +15,53 @@ public class GameLoop implements Runnable {
     }
 
     private void update(GameCharacter c, Keys keys) {
-
-        boolean leftPressed  = keys.isPressed(c.getLeftKey());
+        boolean leftPressed = keys.isPressed(c.getLeftKey());
         boolean rightPressed = keys.isPressed(c.getRightKey());
-        boolean upPressed    = keys.isPressed(c.getUpKey());
+        boolean upPressed = keys.isPressed(c.getUpKey());
+        boolean downPressed = keys.isPressed(c.getDownKey());
+        boolean shoot = keys.isPressed(c.getShootKey());
 
-        if (leftPressed && rightPressed) {
-            c.stop();
-        } else if (leftPressed) {
-            c.getImageView();
-            c.moveLeft();
-        } else if (rightPressed) {
-            c.getImageView();
-            c.moveRight();
+        if (leftPressed && rightPressed) c.stop();
+        else if (leftPressed) c.moveLeft();
+        else if (rightPressed) c.moveRight();
+        else c.stop();
+
+        if (upPressed) c.jump();
+        if (downPressed) c.crouch();
+        else c.stopCrouch();
+
+        if (shoot) {
+            c.shoot();
+            gameStage.playerShoot();
         } else {
-            c.stop();
-        }
-        if (upPressed) {
-            c.getImageView(); c.jump();
+            c.stopShoot();
         }
 
         c.update();
-        c.checkReachGameWall();
-        c.checkReachHighest();
-        c.checkReachFloor();
-
     }
 
     @Override
     public void run() {
         while (running) {
             long start = System.currentTimeMillis();
-
             GameCharacter c = gameStage.getGameCharacter();
             Keys keys = gameStage.getKeys();
+
             javafx.application.Platform.runLater(() -> {
                 update(c, keys);
-
+                gameStage.updateBoss();
+                gameStage.updateTurrets();
+                gameStage.updateBullets();
+                gameStage.updateEnemyBullets();
+                gameStage.checkCollisions();
+                gameStage.checkGameState();
             });
 
             long elapsed = System.currentTimeMillis() - start;
             float sleep = intervalMs - elapsed;
             if (sleep < 1) sleep = 1;
             try {
-                Thread.sleep((long)sleep);
+                Thread.sleep((long) sleep);
             } catch (InterruptedException ignored) {}
         }
     }

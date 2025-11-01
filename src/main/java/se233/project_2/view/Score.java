@@ -13,7 +13,7 @@ public class Score extends Label {
         setTextFill(Color.WHITE);
         setFont(new Font("Arial", 24));
         update(0);
-        System.out.println("ควย");
+    
     }
 
     public void update(int score) {

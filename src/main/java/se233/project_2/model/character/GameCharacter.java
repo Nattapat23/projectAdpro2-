@@ -5,10 +5,15 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import se233.project_2.Launcher;
 import se233.project_2.model.AnimatedSprite;
+import se233.project_2.model.platFrom;
 import se233.project_2.view.GameStage;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class GameCharacter extends Pane {
+    private List<platFrom> platFromList =  new ArrayList<>();
     private Image characterImg;
     private AnimatedSprite imageView;
     private int x;
@@ -17,8 +22,8 @@ public class GameCharacter extends Pane {
     private int startY;
     private int characterWidth;
     private int characterHeight;
-    private int standingHeight; // ADDED: ความสูงตอนยืน
-    private int crouchingHeight; // ADDED: ความสูงตอนหมอบ
+    private int standingHeight;
+    private int crouchingHeight;
 
     private int score;
     private int lives;
@@ -55,7 +60,7 @@ public class GameCharacter extends Pane {
     private static final int ANIM_SHOOT_JUMP = 7;
     private static final int ANIM_SHOOT_CROUCH = 8;
 
-    public GameCharacter(int id, int x, int y, int width, int height, KeyCode leftKey, KeyCode rightKey, KeyCode upKey,KeyCode proneKey, KeyCode shootKey) {
+    public GameCharacter( int x, int y, int width, int height, KeyCode leftKey, KeyCode rightKey, KeyCode upKey,KeyCode proneKey, KeyCode shootKey) {
         this.x = x;
         this.y = y;
         this.startX = x;
@@ -63,14 +68,14 @@ public class GameCharacter extends Pane {
         this.setTranslateX(x);
         this.setTranslateY(y);
         this.characterWidth = width;
-        this.standingHeight = height; // FIXED: กำหนดค่าความสูงตอนยืน
+        this.standingHeight = height;
         this.crouchingHeight = (int)(height * 0.6);
         this.characterHeight = this.standingHeight;
 
-        this.lives = 3;
+        this.lives = 999;
 
         this.characterImg = new Image(Launcher.class.getResourceAsStream("/se233/project_2/player.png"));
-        this.imageView = new AnimatedSprite(characterImg,4,4,1, 0,0, 16,32);
+        this.imageView = new AnimatedSprite(characterImg,6,6,1, 0,0, width,height);
         this.imageView.setFitWidth((int) (width * 1.2));
         this.imageView.setFitHeight((int) (height * 1.2));
 
@@ -80,24 +85,28 @@ public class GameCharacter extends Pane {
         this.downKey = proneKey;
         this.shootKey = shootKey ;
         this.getChildren().addAll(this.imageView);
-        setScaleX(id % 2 * 2 - 1);
+        setScaleX(1);
     }
+
     public void moveLeft() {
         if (isCrouching || isDead) return;
-        setScaleX(1);
+        setScaleX(-1);
         isMoveLeft = true;
         isMoveRight = false;
     }
+
     public void moveRight() {
         if (isCrouching || isDead) return;
-        setScaleX(-1);
+        setScaleX(1);
         isMoveLeft = false;
         isMoveRight = true;
     }
+
     public void stop() {
         isMoveLeft = false;
         isMoveRight = false;
     }
+
     public void moveX() {
         if (isDead) return;
         setTranslateX(x);
@@ -111,6 +120,7 @@ public class GameCharacter extends Pane {
             xVelocity = 0;
         }
     }
+
     public void moveY() {
         if (isDead) return;
         setTranslateY(y);
@@ -152,9 +162,11 @@ public class GameCharacter extends Pane {
         }
     }
 
+    public void setPlatforms(List<platFrom> platforms) {
+        this.platFromList = platforms;
+    }
+
     public void shoot() {
-        // เราจะแค่ตั้งค่าสถานะ
-        // Gameloop จะเป็นคนตรวจจับสถานะนี้และสร้างกระสุน
         if (isDead) return;
         isShooting = true;
     }
@@ -162,6 +174,7 @@ public class GameCharacter extends Pane {
     public void stopShoot() {
         isShooting = false;
     }
+
     public void checkReachHighest () {
         if (isDead) return;
         if(isJumping && yVelocity <= 0) {
@@ -170,21 +183,80 @@ public class GameCharacter extends Pane {
             yVelocity = 0;
         }
     }
+
     public void checkReachGameWall() {
         if (isDead) return;
         if(x <= 0) {
             x = 0;
-        } else if( x + characterWidth >= GameStage.WIDTH) { // ใช้ characterWidth
+        } else if( x + characterWidth >= GameStage.WIDTH) {
             x = GameStage.WIDTH - characterWidth;
         }
     }
+
     public void checkReachFloor() {
         if (isDead) return;
-        if(isFalling && y >= GameStage.GROUND - this.characterHeight) {
-            y = GameStage.GROUND - this.characterHeight;
-            isFalling = false;
-            canJump = true;
-            yVelocity = 0;
+        if (isFalling) {
+            boolean onPlatform = false;
+
+            // ตรวจสอบการชนกับแพลตฟอร์ม
+            for (platFrom p : platFromList) {
+                // ตรวจสอบว่าตัวละครอยู่เหนือแพลตฟอร์มในแนวนอน
+                boolean xOverlap = (x + characterWidth > p.getX()) && (x < p.getX() + p.getwidth());
+
+                // ตรวจสอบว่าตัวละครกำลังจะตกถึงแพลตฟอร์ม
+                boolean yFutureOverlap = (y + characterHeight + yVelocity) >= p.getY();
+                boolean yCurrentlyAbove = (y + characterHeight) <= p.getY();
+
+                if (xOverlap && yCurrentlyAbove && yFutureOverlap) {
+                    y = p.getY() - this.characterHeight;
+                    isFalling = false;
+                    canJump = true;
+                    yVelocity = 0;
+                    onPlatform = true;
+                    break;
+                }
+            }
+
+            // ถ้าไม่ได้อยู่บนแพลตฟอร์มใดๆ ให้ตรวจสอบการชนกับพื้น
+            if (!onPlatform) {
+                if (y >= GameStage.GROUND - this.characterHeight) {
+                    // ถึงพื้นแล้ว
+                    y = GameStage.GROUND - this.characterHeight;
+                    isFalling = false;
+                    canJump = true;
+                    yVelocity = 0;
+                } else {
+                    // ยังไม่ถึงพื้นและไม่ได้อยู่บนแพลตฟอร์ม = ต้องตกลงมา
+                    if (!isFalling && !isJumping) {
+                        isFalling = true;
+                        canJump = false;
+                    }
+                }
+            }
+        }
+
+        // ตรวจสอบว่าตัวละครยังคงอยู่บนแพลตฟอร์มหรือไม่ (สำหรับกรณีที่เดินออกจากขอบ)
+        if (!isFalling && !isJumping && canJump) {
+            boolean stillOnPlatform = false;
+
+            for (platFrom p : platFromList) {
+                boolean xOverlap = (x + characterWidth > p.getX()) && (x < p.getX() + p.getwidth());
+                boolean yOnPlatform = Math.abs((y + characterHeight) - p.getY()) <= 2; // ให้ความผิดพลาดเล็กน้อย
+
+                if (xOverlap && yOnPlatform) {
+                    stillOnPlatform = true;
+                    break;
+                }
+            }
+
+            // ตรวจสอบว่ายังอยู่บนพื้นหรือไม่
+            boolean onGround = Math.abs((y + characterHeight) - GameStage.GROUND) <= 2;
+
+            // ถ้าไม่ได้อยู่บนแพลตฟอร์มและไม่ได้อยู่บนพื้น ให้เริ่มตก
+            if (!stillOnPlatform && !onGround) {
+                isFalling = true;
+                canJump = false;
+            }
         }
     }
 
@@ -194,81 +266,44 @@ public class GameCharacter extends Pane {
         checkReachGameWall();
         checkReachHighest();
         checkReachFloor();
-        updateAnimation();
+
     }
 
-    public void die() {
-        if (isDead) return; // ป้องกันการตายซ้ำซ้อน
 
-        this.lives--;
-        this.isDead = true;
-        this.stop(); // หยุดเคลื่อนที่
-        // TODO: เล่นแอนิเมชันตาย (ถ้ามี)
-        // imageView.setAnimationRow(ANIM_DEATH);
-
-        // (คุณสามารถเพิ่ม Timer ตรงนี้เพื่อหน่วงเวลาก่อน Respawn)
-        // (แต่เพื่อความง่าย เราจะให้ Gameloop สั่ง Respawn)
-    }
 
     public void respawn() {
         this.x = this.startX;
         this.y = this.startY;
 
-        // MODIFIED: ต้องรีเซ็ตความสูงกลับเป็นตอนยืน
         this.characterHeight = this.standingHeight;
         this.imageView.setFitWidth(this.characterWidth);
-        this.imageView.setFitHeight(this.standingHeight); // (หรือค่า * 1.2 ตามที่คุณตั้งไว้)
+        this.imageView.setFitHeight((int)(this.standingHeight * 1.2));
 
         this.isMoveLeft = false;
         this.isMoveRight = false;
         this.isFalling = true;
         this.canJump = false;
         this.isJumping = false;
-        this.isCrouching = false; // ADDED: รีเซ็ตสถานะหมอบด้วย
+        this.isCrouching = false;
+
+        this.isDead = false;
     }
 
-    private void updateAnimation() {
 
-        if (isDead) {
-            // imageView.setAnimationRow(ANIM_DEATH); // (Optional)
-            return;
-        }
-        if (isCrouching) {
-            imageView.setAnimationRow(ANIM_CROUCH);
-        } else if (isJumping) {
-            imageView.setAnimationRow(ANIM_JUMP);
-        } else if (isFalling) {
-            imageView.setAnimationRow(ANIM_FALL);
-        } else if (isMoveLeft || isMoveRight) {
-            if (isShooting) {
-                // imageView.setAnimationRow(ANIM_SHOOT_RUN); // ถ้ามี
-                imageView.setAnimationRow(ANIM_RUN); // ใช้ท่าวิ่งไปก่อน
-            } else {
-                imageView.setAnimationRow(ANIM_RUN);
-            }
-        } else {
-            if (isShooting) {
-                imageView.setAnimationRow(ANIM_SHOOT_STAND);
-            } else {
-                imageView.setAnimationRow(ANIM_IDLE);
-            }
-        }
-    }
 
     public KeyCode getLeftKey() {
-
         return leftKey;
     }
-    public KeyCode getRightKey() {
 
+    public KeyCode getRightKey() {
         return rightKey;
     }
-    public KeyCode getUpKey() {
 
+    public KeyCode getUpKey() {
         return upKey;
     }
-    public AnimatedSprite getImageView() {
 
+    public AnimatedSprite getImageView() {
         return imageView;
     }
 
@@ -318,5 +353,9 @@ public class GameCharacter extends Pane {
 
     public boolean isMoveLeft() {
         return isMoveLeft;
+    }
+
+    public int getLives() {
+        return lives;
     }
 }
