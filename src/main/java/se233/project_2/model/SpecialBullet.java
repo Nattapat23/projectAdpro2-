@@ -20,21 +20,21 @@ public class SpecialBullet extends Bullet {
     private AnimatedSprite explosionSprite;
     private String explosionImagePath = "/se233/project_2/boomBullet.png";
     private int explosionFrames = 3;
-    private int explosionWidth = 50; // ระเบิดใหญ่กว่า
+    private int explosionWidth = 50;
     private int explosionHeight = 50;
     private boolean exploding = false;
     private boolean readyToRemove = false;
 
-    // Constructor แบบไม่มีรูปภาพ
+
     public SpecialBullet(int x, int y, int direction) {
-        super(x, y, direction); // เรียก parent constructor
+        super(x, y, direction);
         this.direction = direction;
         this.xVelocity = 12 * direction; // ช้ากว่ากระสุนธรรมดาเล็กน้อย
 
-        // ลบ visual เดิมจาก parent
+
         getChildren().clear();
 
-        // สร้าง visual ใหม่ที่ใหญ่กว่าและเป็นสีพิเศษ
+
         specialVisual = new Rectangle(0, 0, 20, 10);
         specialVisual.setFill(Color.RED); // สีแดงสำหรับกระสุนพิเศษ
 
@@ -43,19 +43,19 @@ public class SpecialBullet extends Bullet {
         getChildren().add(specialVisual);
     }
 
-    // Constructor แบบมีรูปภาพ
+
     public SpecialBullet(int x, int y, int direction, String imagePath, int width, int height) {
         super(x, y, direction); // เรียก parent constructor
         this.direction = direction;
         this.xVelocity = 12 * direction;
 
-        // ลบ children เดิม
+
         getChildren().clear();
 
         try {
             Image img = new Image(getClass().getResourceAsStream(imagePath));
             specialImageView = new AnimatedSprite(img, 0, 1, 1, 0, 0, width, height);
-            specialImageView.setFitWidth(width / 6); // ใหญ่กว่ากระสุนธรรมดา
+            specialImageView.setFitWidth(width / 6);
             specialImageView.setFitHeight(height / 6);
             specialImageView.setPreserveRatio(true);
         } catch (NullPointerException e) {

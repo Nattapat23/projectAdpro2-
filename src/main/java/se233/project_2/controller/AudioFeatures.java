@@ -1,31 +1,38 @@
 package se233.project_2.controller;
 
+import javafx.scene.media.AudioClip;
 import javazoom.jl.player.Player;
 import se233.project_2.Launcher;
 
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import java.io.BufferedInputStream;
 import java.io.InputStream;
 
 public class AudioFeatures {
     private static Player player;
     private static Thread soundThread;
+    private static volatile boolean shouldStop = false; //  ตัวแปรควบคุมการหยุด
+
+    public static AudioClip SHOOT_SOUND;
+    public static AudioClip HIT_SOUND;
 
     public static void playBossSound() {
-        // ถ้าเล่นอยู่แล้วให้หยุดก่อน
         stopSound();
+        shouldStop = false; // reset flag
 
         soundThread = new Thread(() -> {
             try {
-                while (true) {
+                while (!shouldStop) { //  เช็ค flag
                     InputStream is = Launcher.class.getResourceAsStream("/se233/project_2/sound/BUTTERBEAR.mp3");
+                    if (is == null || shouldStop) break; //  เช็คอีกรอบ
+
                     player = new Player(is);
                     player.play();
+
+                    if (shouldStop) break; // หยุดทันทีถ้ามีการเรียก stopSound()
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                if (!shouldStop) { // ไม่แสดง error ถ้าหยุดปกติ
+                    e.printStackTrace();
+                }
             }
         });
         soundThread.setDaemon(true);
@@ -33,76 +40,88 @@ public class AudioFeatures {
     }
 
     public static void stopSound() {
+        shouldStop = true; //  ตั้ง flag ให้หยุดลูป
+
         try {
+            if (player != null) {
+                player.close();
+                player = null;
+            }
 
-                if (soundThread != null) {
-                    player.close();
-                    soundThread.interrupt();
-                }
-
-
+            if (soundThread != null && soundThread.isAlive()) {
+                soundThread.interrupt();
+                //  รอให้ thread จบ (สูงสุด 500ms)
+                soundThread.join(500);
+                soundThread = null;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    public static void loadSounds() {
+        try {
+            String shootURL = Launcher.class.getResource("/se233/project_2/sound/enemy-gun-2.mp3").toString();
+            String hitURL = Launcher.class.getResource("/se233/project_2/sound/enemy-hit.mp3").toString();
+
+            SHOOT_SOUND = new AudioClip(shootURL);
+            HIT_SOUND = new AudioClip(hitURL);
+
+            System.out.println("Sounds loaded successfully!");
+        } catch (Exception e) {
+            System.err.println("Error loading sounds!");
+            e.printStackTrace();
+        }
+    }
+
     public static void playOpenSound() {
-        // ถ้าเล่นอยู่แล้วให้หยุดก่อน
         stopSound();
+        shouldStop = false; //  reset flag
 
         soundThread = new Thread(() -> {
             try {
+                InputStream is = Launcher.class.getResourceAsStream("/se233/project_2/sound/Contra.mp3");
+                if (is == null || shouldStop) return; //  เช็ค
 
-                    InputStream is = Launcher.class.getResourceAsStream("/se233/project_2/sound/Contra.mp3");
-                    player = new Player(is);
-                    player.play();
-
+                player = new Player(is);
+                player.play();
             } catch (Exception e) {
-                e.printStackTrace();
+                if (!shouldStop) {
+                    e.printStackTrace();
+                }
             }
         });
         soundThread.setDaemon(true);
-
         soundThread.start();
     }
 
     public static void playHitSound() {
-        try {
-            InputStream is = Launcher.class.getResourceAsStream("/se233/project_2/CUTEKOREAN.wav");
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(new BufferedInputStream(is));
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioStream);
-            clip.start();
-        } catch (Exception e) {
-            System.out.println( e.getMessage());
+        if (HIT_SOUND != null) {
+            HIT_SOUND.play();
         }
     }
 
     public static void playShootSound() {
-        try {
-            InputStream is = Launcher.class.getResourceAsStream("/se233/project_2/CUTEKOREAN.wav");
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(new BufferedInputStream(is));
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioStream);
-            clip.start();
-        } catch (Exception e) {
-            System.out.println( e.getMessage());
+        if (SHOOT_SOUND != null) {
+            SHOOT_SOUND.play();
         }
     }
 
     public static void playGameSound() {
-        // ถ้าเล่นอยู่แล้วให้หยุดก่อน
         stopSound();
+        shouldStop = false; //  reset flag
 
         soundThread = new Thread(() -> {
             try {
-
                 InputStream is = Launcher.class.getResourceAsStream("/se233/project_2/sound/gameSound.mp3");
-                 player = new Player(is);
-                player.play();
+                if (is == null || shouldStop) return; // เช็ค
 
+                player = new Player(is);
+                player.play();
             } catch (Exception e) {
-                e.printStackTrace();
+                if (!shouldStop) {
+                    e.printStackTrace();
+                }
             }
         });
         soundThread.setDaemon(true);

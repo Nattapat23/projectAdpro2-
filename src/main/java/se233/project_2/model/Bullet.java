@@ -8,6 +8,7 @@ import javafx.scene.shape.Rectangle;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se233.project_2.Exception.SpriteException;
+import se233.project_2.controller.AudioFeatures;
 import se233.project_2.model.character.Boss3MEENEO;
 import se233.project_2.view.GameStage;
 
@@ -20,7 +21,7 @@ public class Bullet extends Pane {
     private int xVelocity;
     private int direction; // 1 = right, -1 = left
     private boolean hit = false;
-    private int dmg = 30;
+    private int dmg = 20;
 
     private AnimatedSprite explosionSprite;
     private String explosionImagePath = "/se233/project_2/boomBullet.png";
@@ -143,6 +144,7 @@ public class Bullet extends Pane {
     }
 
     public void setHit(boolean hit) {
+        AudioFeatures.playHitSound();
         if (hit && !this.hit) {
             triggerExplosion();
         }

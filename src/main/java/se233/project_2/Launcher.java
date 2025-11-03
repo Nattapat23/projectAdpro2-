@@ -20,6 +20,7 @@ public class Launcher extends Application {
 
     @Override
     public void start(Stage stage) {
+        AudioFeatures.loadSounds();
         Pane root = new Pane();
         Scene scene = new Scene(root, GameStage.WIDTH, GameStage.HEIGHT);
         AudioFeatures.playOpenSound();

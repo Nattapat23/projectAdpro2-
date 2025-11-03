@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se233.project_2.Exception.SpriteException;
 import se233.project_2.Launcher;
+import se233.project_2.controller.AudioFeatures;
 import se233.project_2.model.character.Boss3MEENEO;
 import se233.project_2.view.GameStage;
 
@@ -74,6 +75,7 @@ public class EnemyBullet extends Pane {
     }
 
     public void setHit(boolean hit) {
+        AudioFeatures.playHitSound();
         this.hit = hit;
     }
 }

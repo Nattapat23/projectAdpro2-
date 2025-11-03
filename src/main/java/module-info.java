@@ -6,6 +6,7 @@ module se233.project_2 {
 
     requires java.desktop;
     requires jlayer;
+    requires javafx.media;
 
 
     opens se233.project_2 to javafx.fxml;

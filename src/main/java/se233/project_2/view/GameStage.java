@@ -9,6 +9,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se233.project_2.Exception.SpriteException;
 import se233.project_2.controller.AudioFeatures;
 import se233.project_2.controller.DrawingLoop;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class GameStage extends Pane {
+    private static final Logger logger = LogManager.getLogger(GameStage.class);
     public static final int WIDTH = 900;
     public static final int HEIGHT = 500;
     public static int GROUND = 440;
@@ -103,7 +106,7 @@ public class GameStage extends Pane {
 
     private void setupStage(int stageNumber) {
         // Clear ทุกอย่าง
-
+        AudioFeatures.stopSound();
         getChildren().removeAll(platforms);
         getChildren().removeAll(bullets);
         getChildren().removeAll(enemyBullets);
@@ -182,6 +185,7 @@ public class GameStage extends Pane {
 
         } else if (stageNumber == 4) {
             // จบเกม
+          AudioFeatures.stopSound();
             showMessage("You Win!\nFinal Score: " + score, 3000);
             new Thread(() -> {
                 try {
@@ -222,8 +226,8 @@ public class GameStage extends Pane {
                 );
                 bullets.add(specialBullet); // เพิ่มลงใน list เดียวกัน
                 getChildren().add(specialBullet);
-
-                System.out.println("Special Shot! Cooldown: " + specialShotCooldown + "ms, Damage: 100");
+                AudioFeatures.playShootSound();
+                logger.info("Special Shot! Cooldown: " + specialShotCooldown + "ms, Damage: 100");
             } catch (NullPointerException e) {
                 SpecialBullet specialBullet = new SpecialBullet(x, y, direction);
                 bullets.add(specialBullet);
@@ -235,8 +239,9 @@ public class GameStage extends Pane {
         } else {
             // คำนวณเวลาคงเหลือ
             long timeLeft = specialShotCooldown - (now - lastSpecialShotTime);
-            System.out.println("Special shot on cooldown! " + (timeLeft / 1000.0) + " seconds left");
+           logger.info("Special shot on cooldown! " + (timeLeft / 1000.0) + " seconds left");
         }
+
     }
     public void playerShoot() {
         long now = System.currentTimeMillis();
@@ -248,6 +253,7 @@ public class GameStage extends Pane {
             try {
                 Bullet bullet = new Bullet(x, y, direction, "/se233/project_2/bullet.png", 156, 156);
                 bullets.add(bullet);
+                AudioFeatures.playShootSound();
                 getChildren().add(bullet);
             } catch (NullPointerException e) {
                 Bullet bullet = new Bullet(x, y, direction);
@@ -379,7 +385,7 @@ public class GameStage extends Pane {
             }
         }
 
-        // ✅ ตรวจสอบผู้เล่นชนบอส - ถ้าชนจะตายทันที
+        //  ตรวจสอบผู้เล่นชนบอส - ถ้าชนจะตายทันที
         if (boss != null && !boss.isDead()) {
             if (gameCharacter.getBoundsInParent().intersects(boss.getBoundsInParent())) {
                 playerHit();
@@ -453,6 +459,7 @@ public class GameStage extends Pane {
             showMessage("Lives left: " + lives, 1000);
             gameCharacter.respawn();
         } else {
+            AudioFeatures.stopSound();
             showMessage("GAME OVER\nFinal Score: " + score, 2000);
             new Thread(() -> {
                 try {
@@ -486,6 +493,7 @@ public class GameStage extends Pane {
     }
 
     private void resetToMenu() {
+        AudioFeatures.stopSound();
         if (rootPane != null) {
             rootPane.getChildren().clear();
             MenuView menu = new MenuView();
@@ -534,7 +542,7 @@ public class GameStage extends Pane {
             } else if (stageNumber == 3) {
                 bgPath = "/se233/project_2/Background3.png";
             } else {
-                bgPath = "/se233/project_2/Background.png";
+                bgPath = "/se233/project_2/BackgroundWin.png";
             }
 
             Image newBg = new Image(Objects.requireNonNull(
