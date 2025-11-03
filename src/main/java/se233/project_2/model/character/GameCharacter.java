@@ -3,6 +3,8 @@ package se233.project_2.model.character;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se233.project_2.Launcher;
 import se233.project_2.model.AnimatedSprite;
 import se233.project_2.model.platFrom;
@@ -13,6 +15,7 @@ import java.util.List;
 
 
 public class GameCharacter extends Pane {
+    private static final Logger logger = LogManager.getLogger(GameCharacter.class);
     private List<platFrom> platFromList =  new ArrayList<>();
     private Image characterImg;
     private AnimatedSprite imageView;
@@ -33,6 +36,8 @@ public class GameCharacter extends Pane {
     private KeyCode upKey;
     private KeyCode downKey;
     private KeyCode shootKey;
+    private KeyCode specialShootKey; // เพิ่มตัวแปรปุ่มยิงพิเศษ
+    public boolean isSpecialShooting = false;
 
     int xVelocity = 0;
     int yVelocity = 0;
@@ -50,17 +55,17 @@ public class GameCharacter extends Pane {
     public boolean isShooting = false;
     private boolean isDead = false;
 
-    private static final int ANIM_IDLE = 0;
-    private static final int ANIM_RUN = 1;
-    private static final int ANIM_JUMP = 2;
-    private static final int ANIM_FALL = 3;
-    private static final int ANIM_CROUCH = 4;
-    private static final int ANIM_SHOOT_STAND = 5;
-    private static final int ANIM_SHOOT_RUN = 6;
-    private static final int ANIM_SHOOT_JUMP = 7;
-    private static final int ANIM_SHOOT_CROUCH = 8;
+    private int jumpCount = 0;
+    private int maxJumps = 2;
+    private int currentAnimation = ANIM_IDLE;
 
-    public GameCharacter( int x, int y, int width, int height, KeyCode leftKey, KeyCode rightKey, KeyCode upKey,KeyCode proneKey, KeyCode shootKey) {
+    private static final int ANIM_IDLE = 0;
+    private static final int ANIM_SHOOT = 1;
+    private static final int ANIM_JUMP = 3;
+    private static final int ANIM_CROUCH = 2;
+    private static final int ANIM_SHOOT_NOR = 4;
+
+    public GameCharacter( int x, int y, int width, int height, KeyCode leftKey, KeyCode rightKey, KeyCode upKey,KeyCode proneKey, KeyCode shootKey, KeyCode specialShootKey) {
         this.x = x;
         this.y = y;
         this.startX = x;
@@ -69,21 +74,29 @@ public class GameCharacter extends Pane {
         this.setTranslateY(y);
         this.characterWidth = width;
         this.standingHeight = height;
-        this.crouchingHeight = (int)(height * 0.6);
+        this.crouchingHeight = (int)(height * 0.4);
         this.characterHeight = this.standingHeight;
 
         this.lives = 999;
 
         this.characterImg = new Image(Launcher.class.getResourceAsStream("/se233/project_2/player.png"));
-        this.imageView = new AnimatedSprite(characterImg,6,6,1, 0,0, width,height);
-        this.imageView.setFitWidth((int) (width * 1.2));
-        this.imageView.setFitHeight((int) (height * 1.2));
+
+        // : กำหนดจำนวนเฟรมแต่ละแถวแยกกัน (แนะนำถ้าแต่ละแถวไม่เท่ากัน)
+        // ปรับจำนวนเฟรมตามสไปร์ทชีทของคุณ
+        int[] framesPerRow = new int[] {
+              6,6,2,4,1
+        };
+        this.imageView = new AnimatedSprite(characterImg, framesPerRow, 0, 0, 115, 122);
+
+        this.imageView.setFitWidth(width * 100);
+        this.imageView.setFitHeight(height * 100);
 
         this.leftKey = leftKey;
         this.rightKey = rightKey;
         this.upKey = upKey;
         this.downKey = proneKey;
         this.shootKey = shootKey ;
+        this.specialShootKey = specialShootKey;
         this.getChildren().addAll(this.imageView);
         setScaleX(1);
     }
@@ -134,9 +147,14 @@ public class GameCharacter extends Pane {
     }
 
     public void jump() {
-        if (!canJump || isCrouching || isDead) return;
+        if (isCrouching || isDead) return;
+        if (jumpCount >= maxJumps){
+            logger.warn("Limit Jump !! ");
+            return;
+        }
 
         yVelocity = yMaxVelocity;
+        jumpCount++;
         canJump = false;
         isJumping = true;
         isFalling = false;
@@ -173,6 +191,7 @@ public class GameCharacter extends Pane {
 
     public void stopShoot() {
         isShooting = false;
+        isSpecialShooting =  false;
     }
 
     public void checkReachHighest () {
@@ -180,7 +199,9 @@ public class GameCharacter extends Pane {
         if(isJumping && yVelocity <= 0) {
             isJumping = false;
             isFalling = true;
+            imageView.tick();
             yVelocity = 0;
+
         }
     }
 
@@ -212,6 +233,7 @@ public class GameCharacter extends Pane {
                     isFalling = false;
                     canJump = true;
                     yVelocity = 0;
+                    jumpCount = 0;
                     onPlatform = true;
                     break;
                 }
@@ -225,6 +247,7 @@ public class GameCharacter extends Pane {
                     isFalling = false;
                     canJump = true;
                     yVelocity = 0;
+                    jumpCount = 0;
                 } else {
                     // ยังไม่ถึงพื้นและไม่ได้อยู่บนแพลตฟอร์ม = ต้องตกลงมา
                     if (!isFalling && !isJumping) {
@@ -232,7 +255,9 @@ public class GameCharacter extends Pane {
                         canJump = false;
                     }
                 }
+
             }
+
         }
 
         // ตรวจสอบว่าตัวละครยังคงอยู่บนแพลตฟอร์มหรือไม่ (สำหรับกรณีที่เดินออกจากขอบ)
@@ -266,14 +291,63 @@ public class GameCharacter extends Pane {
         checkReachGameWall();
         checkReachHighest();
         checkReachFloor();
-
+        updateAnimation();
     }
 
+    public void updateAnimation() {
+        int newAnimation = 0;
 
+        // ลำดับความสำคัญของแอนิเมชั่น
+        if (isCrouching) {
+            if (isShooting) {
+                newAnimation = ANIM_CROUCH;
+            } else {
+                newAnimation = ANIM_CROUCH;
+            }
+        } else if (isJumping || isFalling) {
+            if (isShooting) {
+                newAnimation = ANIM_JUMP;
+            } else if (isFalling) {
+                newAnimation = ANIM_JUMP;
+            } else {
+                newAnimation = ANIM_JUMP;
+            }
+        } else if (isMoveLeft || isMoveRight ) {
+            if (isShooting) {
+                newAnimation = ANIM_SHOOT;
+            } else {
+                newAnimation = ANIM_IDLE;
+            }
+        } else {
+            if (isShooting) {
+                newAnimation = ANIM_SHOOT_NOR;
+            } else {
+                newAnimation = ANIM_IDLE;
+
+            }
+        }
+
+        // เปลี่ยนแอนิเมชั่นถ้าต่างจากเดิม
+        if (newAnimation != currentAnimation) {
+            currentAnimation = newAnimation;
+            imageView.setCurRowIndex(newAnimation);
+            imageView.setCurColumnIndex(0);
+            imageView.setCurIndex(0);
+        }
+    }
+
+    public void specialShoot() {
+        if (isDead) return;
+        isSpecialShooting = true;
+    }
+
+    public KeyCode getSpecialShootKey() {
+        return specialShootKey;
+    }
 
     public void respawn() {
         this.x = this.startX;
-        this.y = this.startY;
+        this.y =  GameStage.GROUND - this.characterHeight;
 
         this.characterHeight = this.standingHeight;
         this.imageView.setFitWidth(this.characterWidth);
@@ -285,6 +359,9 @@ public class GameCharacter extends Pane {
         this.canJump = false;
         this.isJumping = false;
         this.isCrouching = false;
+        this.isShooting = false;
+        this.jumpCount = 0;
+        this.currentAnimation = ANIM_IDLE;
 
         this.isDead = false;
     }
@@ -358,4 +435,23 @@ public class GameCharacter extends Pane {
     public int getLives() {
         return lives;
     }
+
+    public void traceCrouch(){
+        logger.info("Player Crouch");
+    }
+
+    public void traceShoot(){
+        logger.info("Player Shoot !");
+    }
+
+
+    public void traceJump(){
+        if(jumpCount==2){
+            logger.info("Double Jump !!");
+        }else if (jumpCount==1){
+        logger.info("Jump count : " + jumpCount);
+        }
+    }
+
+
 }

@@ -11,7 +11,7 @@ public class MenuView extends VBox {
     private Button startButton;
 
     public MenuView() {
-        Label title = new Label("Boss Shooter Game");
+        Label title = new Label("Con-mhe");
         title.setFont(new Font("Arial", 40));
         title.setTextFill(Color.WHITE);
 

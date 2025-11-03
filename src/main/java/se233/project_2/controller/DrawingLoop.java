@@ -23,6 +23,9 @@ public class DrawingLoop implements Runnable{
     private void paint(GameCharacter gameCharacter){
         gameCharacter.update();
     }
+    public void stop() {
+        running = false;
+    }
     @Override
     public void run() {
         while(running){

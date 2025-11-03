@@ -20,24 +20,60 @@ public class GameLoop implements Runnable {
         boolean upPressed = keys.isPressed(c.getUpKey());
         boolean downPressed = keys.isPressed(c.getDownKey());
         boolean shoot = keys.isPressed(c.getShootKey());
+        boolean specialShoot = keys.isPressed(c.getSpecialShootKey()); // เพิ่มบรรทัดนี้
 
-        if (leftPressed && rightPressed) c.stop();
-        else if (leftPressed) c.moveLeft();
-        else if (rightPressed) c.moveRight();
-        else c.stop();
+        if (leftPressed && rightPressed) {
+            c.stop();
+        } else if (leftPressed && rightPressed && downPressed) {
+            c.traceCrouch();
+            c.crouch();
+        } else if (leftPressed) {
+            c.getImageView().tick();
+            c.moveLeft();
+        } else if (rightPressed) {
+            c.getImageView().tick();
+            c.moveRight();
+        } else {
+            c.stop();
+        }
 
-        if (upPressed) c.jump();
-        if (downPressed) c.crouch();
-        else c.stopCrouch();
+        if (upPressed) {
+            c.traceJump();
+            c.getImageView().tick();
+            c.jump();
+        }
 
+        if (downPressed) {
+            c.getImageView().tick();
+            c.traceCrouch();
+            c.crouch();
+        } else {
+            c.stopCrouch();
+        }
+
+        // ยิงธรรมดา (Space)
         if (shoot) {
+            c.traceShoot();
             c.shoot();
             gameStage.playerShoot();
         } else {
             c.stopShoot();
         }
 
+        // ยิงพิเศษ (Z) - เพิ่มส่วนนี้
+        if (specialShoot) {
+
+            c.specialShoot();
+            gameStage.playerSpecialShoot();
+        } else {
+            c.stopShoot();
+        }
+
         c.update();
+    }
+
+    public void stop() {
+        running = false;
     }
 
     @Override
@@ -53,6 +89,7 @@ public class GameLoop implements Runnable {
                 gameStage.updateTurrets();
                 gameStage.updateBullets();
                 gameStage.updateEnemyBullets();
+                gameStage.updateMinions();
                 gameStage.checkCollisions();
                 gameStage.checkGameState();
             });

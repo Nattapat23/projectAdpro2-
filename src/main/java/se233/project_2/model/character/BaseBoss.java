@@ -1,16 +1,29 @@
 package se233.project_2.model.character;
 
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import se233.project_2.Exception.SpriteException;
+import se233.project_2.Launcher;
+import se233.project_2.model.AnimatedSprite;
 import se233.project_2.view.GameStage;
 
+import java.util.stream.BaseStream;
+
 public abstract class BaseBoss extends Pane {
-    protected Rectangle visual;
+    private static final Logger logger = LogManager.getLogger(BaseBoss.class);
+    protected AnimatedSprite imageView;
+    protected Rectangle visual; // fallback ถ้าไม่มีรูป
     protected int health;
     protected int maxHealth;
     protected boolean dead = false;
-    protected boolean vulnerable = true; // บอสส่วนใหญ่จะถูกโจมตีได้ทันที
+    protected boolean vulnerable = true;
+    protected boolean ScoreAfterDie = false;
+    protected Image img ;
 
     // Health Bar
     protected Rectangle healthBarBg;
@@ -19,15 +32,31 @@ public abstract class BaseBoss extends Pane {
     protected static final int HEALTH_BAR_HEIGHT = 12;
     protected static final int HEALTH_BAR_OFFSET_Y = -25;
 
-    public BaseBoss(int x, int y, int width, int height, int health, Color color) {
+    protected double width;
+    protected int height;
+
+    public BaseBoss(int x, int y, int width, int height, int health, Color color, String imagePath,int colum,int rows) {
         this.health = health;
         this.maxHealth = health;
+        this.width = width;
+        this.height = height;
 
-        // สร้างตัวบอส
-        visual = new Rectangle(0, 0, width, height);
-        visual.setFill(color);
-        visual.setStroke(Color.rgb(40, 40, 40));
-        visual.setStrokeWidth(3);
+        // พยายามโหลดรูป
+        if (imagePath != null) {
+            try {
+                img = new Image(Launcher.class.getResourceAsStream(imagePath));
+                imageView = new AnimatedSprite(img,colum,colum,rows, 0,0, width,height);
+                imageView.setFitWidth(width);
+                imageView.setFitHeight(height);
+                imageView.setPreserveRatio(false);
+                getChildren().add(imageView);
+            } catch (NullPointerException e) {
+                createFallbackVisual(width, height, color);
+                throw new SpriteException("Not Found Paht" +e);
+            }
+        } else {
+            createFallbackVisual(width, height, color);
+        }
 
         // Health bar
         healthBarBg = new Rectangle(
@@ -50,20 +79,35 @@ public abstract class BaseBoss extends Pane {
 
         setTranslateX(x);
         setTranslateY(y);
-        getChildren().addAll(visual, healthBarBg, healthBarFg);
+        getChildren().addAll(healthBarBg, healthBarFg);
     }
 
-    // Method ที่บอสแต่ละตัวต้อง implement เอง
+    private void createFallbackVisual(int width, int height, Color color) {
+        visual = new Rectangle(0, 0, width, height);
+        visual.setFill(color);
+        visual.setStroke(Color.rgb(40, 40, 40));
+        visual.setStrokeWidth(3);
+        getChildren().add(visual);
+    }
+
     public abstract void update(GameStage gameStage);
 
     public void setVulnerable(boolean vulnerable) {
         this.vulnerable = vulnerable;
-        if (vulnerable) {
-            visual.setStroke(Color.YELLOW);
-            visual.setStrokeWidth(5);
-        } else {
-            visual.setStroke(Color.rgb(40, 40, 40));
-            visual.setStrokeWidth(3);
+        if (imageView != null) {
+            if (vulnerable) {
+                imageView.setStyle("-fx-effect: dropshadow(gaussian, yellow, 10, 0.7, 0, 0);");
+            } else {
+                imageView.setStyle("");
+            }
+        } else if (visual != null) {
+            if (vulnerable) {
+                visual.setStroke(Color.YELLOW);
+                visual.setStrokeWidth(5);
+            } else {
+                visual.setStroke(Color.rgb(40, 40, 40));
+                visual.setStrokeWidth(3);
+            }
         }
     }
 
@@ -77,11 +121,9 @@ public abstract class BaseBoss extends Pane {
         health -= dmg;
         if (health < 0) health = 0;
 
-        // อัปเดต health bar
         double healthPercent = (double) health / maxHealth;
         healthBarFg.setWidth(HEALTH_BAR_WIDTH * healthPercent);
 
-        // เปลี่ยนสีตามเลือด
         if (healthPercent > 0.5) {
             healthBarFg.setFill(Color.rgb(220, 50, 50));
         } else if (healthPercent > 0.25) {
@@ -89,14 +131,14 @@ public abstract class BaseBoss extends Pane {
         } else {
             healthBarFg.setFill(Color.rgb(255, 50, 50));
         }
-
+        traceTakeDamage(dmg);
         if (health <= 0) {
             dead = true;
+            ScoreAfterDie = true;
             onDeath();
         }
     }
 
-    // เรียกเมื่อบอสตาย (สำหรับ animation หรือ effect)
     protected void onDeath() {
         this.setVisible(false);
     }
@@ -112,4 +154,37 @@ public abstract class BaseBoss extends Pane {
     public int getHealth() {
         return health;
     }
+
+    public boolean isScoreAfterDie() {
+        return ScoreAfterDie;
+    }
+
+    public void setScoreAfterDie(boolean score){
+        ScoreAfterDie =  score;
+    }
+     public void setImage(double size){
+         imageView.setFitWidth(width*size);
+         imageView.setFitHeight(height*size);
+     }
+
+     public AnimatedSprite getImageView() {
+        return imageView;
+     }
+
+    public void setImageView(AnimatedSprite imageView) {
+        this.imageView = imageView;
+    }
+
+    public void setWidth(double size) {
+        this.width *= size;
+    }
+
+    public void setHeight(double size) {
+        this.height *= size;
+    }
+
+    public void traceTakeDamage(int dmg) {
+        logger.info("Player Take Damage! : "+ dmg);
+    }
+
 }

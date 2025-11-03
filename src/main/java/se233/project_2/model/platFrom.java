@@ -17,7 +17,8 @@ public class platFrom extends Pane {
         this.setTranslateY(y);
         this.setPrefWidth(width);
         this.setPrefHeight(height);
-        this.setStyle("-fx-background-color: #6E2C00; -fx-border-color: #D35400; -fx-border-width: 2;");
+
+//        this.setStyle("-fx-background-color: #6E2C00; -fx-border-color: #D35400; -fx-border-width: 2;");
     }
 
     public int getX() {

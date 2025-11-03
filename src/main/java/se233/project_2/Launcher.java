@@ -4,55 +4,65 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import se233.project_2.controller.AudioFeatures;
 import se233.project_2.controller.DrawingLoop;
 import se233.project_2.controller.GameLoop;
 import se233.project_2.view.GameStage;
 import se233.project_2.view.MenuView;
 
 public class Launcher extends Application {
+    private GameLoop gameLoop;
+    private DrawingLoop drawingLoop;
+
     public static void main(String[] args) {
         launch(args);
     }
 
     @Override
     public void start(Stage stage) {
-        // สร้าง root Pane เพื่อสลับฉาก
         Pane root = new Pane();
         Scene scene = new Scene(root, GameStage.WIDTH, GameStage.HEIGHT);
-
-        // สร้างหน้าจอเมนูและเกม
+        AudioFeatures.playOpenSound();
         MenuView menuView = new MenuView();
-        GameStage gameStage = new GameStage();
-
-        // ส่ง reference ของ root pane ให้ GameStage เพื่อให้สามารถกลับมาเมนูได้
-        gameStage.setRootPane(root);
-
-        // เพิ่มเฉพาะหน้าเมนูก่อน
         root.getChildren().add(menuView);
 
-        // ตั้งค่าปุ่ม Start
         menuView.getStartButton().setOnAction(e -> {
-            // เอาเมนูออก
-            root.getChildren().remove(menuView);
-            // เพิ่มฉากเกม
-            root.getChildren().add(gameStage);
+            // หยุดลูปเก่าถ้ามี
+            if (gameLoop != null) gameLoop.stop();
+            if (drawingLoop != null) drawingLoop.stop();
 
-            // เริ่มต้นเกม (ตั้งค่าด่าน 1)
-            gameStage.startGame();
+            // ลบฉากเก่า
+            root.getChildren().clear();
+
+            // สร้างฉากเกมใหม่
+            GameStage newGameStage = new GameStage();
+            newGameStage.setRootPane(root);
+            newGameStage.setScene(scene); // ส่ง Scene ไปด้วย
+            root.getChildren().add(newGameStage);
+
+            // เริ่มต้นเกม
+            newGameStage.startGame();
 
             // ตั้งค่าการควบคุม
-            scene.setOnKeyPressed(keyEvent -> gameStage.getKeys().add(keyEvent.getCode()));
-            scene.setOnKeyReleased(keyEvent -> gameStage.getKeys().remove(keyEvent.getCode()));
-            gameStage.requestFocus();
+            scene.setOnKeyPressed(keyEvent -> newGameStage.getKeys().add(keyEvent.getCode()));
+            scene.setOnKeyReleased(keyEvent -> newGameStage.getKeys().remove(keyEvent.getCode()));
+            newGameStage.requestFocus();
 
-            // เริ่ม Game Loops
-            GameLoop gameLoop = new GameLoop(gameStage);
-            DrawingLoop drawingLoop = new DrawingLoop(gameStage);
-            (new Thread(gameLoop)).start();
-            (new Thread(drawingLoop)).start();
+            // เริ่ม Loop ใหม่
+            gameLoop = new GameLoop(newGameStage);
+            drawingLoop = new DrawingLoop(newGameStage);
+
+            Thread gameThread = new Thread(gameLoop);
+            Thread drawThread = new Thread(drawingLoop);
+
+            gameThread.setDaemon(true);
+            drawThread.setDaemon(true);
+
+            gameThread.start();
+            drawThread.start();
         });
 
-        stage.setTitle("Mario Boss Shooter");
+        stage.setTitle("Project2");
         stage.setScene(scene);
         stage.show();
     }
