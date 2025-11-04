@@ -77,7 +77,7 @@ public class GameCharacter extends Pane {
         this.crouchingHeight = (int)(height * 0.4);
         this.characterHeight = this.standingHeight;
 
-        this.lives = 10;
+        this.lives = 100;
 
         this.characterImg = new Image(Launcher.class.getResourceAsStream("/se233/project_2/player.png"));
 

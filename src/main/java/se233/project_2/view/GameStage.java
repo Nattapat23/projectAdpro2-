@@ -460,13 +460,15 @@ public class GameStage extends Pane {
             gameCharacter.respawn();
         } else {
             AudioFeatures.stopSound();
-            showMessage("GAME OVER\nFinal Score: " + score, 2000);
+            setupStage(1);
+            showMessage("Game Over!\nFinal Score: " + score, 3000);
             new Thread(() -> {
                 try {
-                    Thread.sleep(2500);
+                    Thread.sleep(3500);
                 } catch (InterruptedException ignored) {}
                 javafx.application.Platform.runLater(this::resetToMenu);
             }).start();
+            currentStage=1;
         }
     }
 
